@@ -2,38 +2,40 @@
 
 ## Scope
 
-Primary focus: **integration tests** for the ASP.NET Core Web API and EF Core persistence.
+Integration tests for the ASP.NET Core Web API + EF Core 8, focused on tickets and the status state machine.
 
 ## Goals
 
-- Verify ticket API endpoints against a real (or test) database pipeline.
-- Catch contract, validation, and persistence regressions early.
-- Keep unit tests optional unless complexity warrants them.
+- Verify ticket create/list/get/update and assignment to seeded users.
+- Prove allowed transitions succeed and invalid transitions fail.
+- Keep browser E2E out of initial scope.
 
-## Integration test coverage (planned)
+## Integration test coverage
 
 | Area | Scenarios |
 |------|-----------|
-| Create | Valid create returns 201/200 and persists |
-| List | Returns created tickets |
-| Get by id | Existing ticket; 404 for missing |
-| Update | Status/priority/field updates persist |
+| Users | `GET /api/users` returns seeded users |
+| Create | Valid create → Open status, CreatedAt set, CreatedBy persisted |
+| List / Get | Returns tickets; 404 for missing id |
+| Update fields | Title/description/priority/assignee persist |
+| Valid transitions | Open→InProgress, Open→Cancelled, InProgress→Resolved, InProgress→Cancelled, Resolved→Closed |
+| Invalid transitions | e.g. Open→Resolved, Open→Closed, Resolved→Cancelled, Closed→*, Cancelled→* → 400 |
 | Validation | Missing title/description rejected |
-| Delete | Soft/hard delete behavior if in scope |
+| Terminal | Updates that only change non-status fields still allowed on Closed/Cancelled if product allows; status change rejected |
 
 ## Approach
 
-- Use ASP.NET Core WebApplicationFactory (or equivalent) for in-process API tests.
-- Prefer isolated test database / EF Core provider suitable for CI.
-- Seed minimal data per test; clean up or use unique fixtures.
-- Assert HTTP status, response body shape, and DB state where useful.
+- `WebApplicationFactory` (or equivalent) for in-process API tests.
+- Isolated test DB; seed Users as part of test host setup.
+- Assert HTTP status, body, and persisted Status where useful.
 
 ## Out of scope (initial)
 
-- Full E2E browser automation (unless later required).
+- Full browser E2E.
 - Load / performance testing.
+- User write APIs (not in product scope).
 
 ## Reporting
 
-- Record runs and outcomes in `test-results.md`.
-- Note failures and fixes in `debugging-notes.md` / `review-fixes.md`.
+- Results → `test-results.md`
+- Failures → `debugging-notes.md` / `review-fixes.md`

@@ -2,7 +2,16 @@
 
 ## Overview
 
-EF Core 8 persistence for the support ticket management system.
+EF Core 8 persistence for Support Ticket Management.
+
+## Entities
+
+- **User** — seeded only
+- **Ticket** — Id, Title, Description, Priority, Status, AssignedTo, CreatedBy, CreatedAt
+
+## Status values
+
+Open, InProgress, Resolved, Closed, Cancelled
 
 ## Local setup
 
@@ -10,18 +19,12 @@ _TBD after solution scaffolding._
 
 1. Configure connection string.
 2. Apply migrations.
-3. Optionally load seed data from `seed-data/`.
+3. Ensure Users are seeded (startup seed and/or `seed-data/`).
 
 ## Schema
 
-See `schema/` for schema artifacts and notes.
+See `schema/` for schema artifacts.
 
 ## Seed data
 
-See `seed-data/` for sample/reference data used in local and test environments.
-
-## Notes
-
-| Date | Note |
-|------|------|
-| | |
+See `seed-data/` for sample users used for CreatedBy / AssignedTo.

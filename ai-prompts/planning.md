@@ -20,7 +20,18 @@ Based on the project stack and staged docs, refine requirements-analysis.md,
 acceptance-criteria.md, and implementation-plan.md for a support ticket system.
 ```
 
+## Assessment capture
+
+```
+Support management system assessment option.
+Entities: User (seeded only); Ticket(id, title, description, priority, status,
+assigned to, created by, created at).
+Status state machine: Open → In Progress | Cancelled;
+In Progress → Resolved | Cancelled; Resolved → Closed.
+Update requirements and design docs accordingly.
+```
+
 ## Outcomes
 
 - Root docs staged.
-- Planning docs ready for design phase.
+- Assessment option, entities, and state machine captured in requirements/design docs.
