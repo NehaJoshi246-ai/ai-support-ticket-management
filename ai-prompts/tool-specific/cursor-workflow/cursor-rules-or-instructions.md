@@ -1,20 +1,25 @@
 # Cursor Rules / Instructions
 
-## Working agreements for this project
+## Working agreements (aligned with codebase)
 
-1. Keep root documentation and `ai-prompts/` updated when decisions change.
-2. Put application code under `src/`; tests under `tests/`; DB artifacts under `database/`.
-3. Do not invent product scope beyond agreed requirements docs without calling it out.
-4. Match implemented APIs to `api-contract.md` and entities to `data-model.md`.
-5. Prefer integration tests for API + EF Core critical paths.
-6. Log debugging and review findings in the corresponding root markdown files.
+1. Solution is `src/SupportTickets.sln` — projects `Api`, `Domain`, `Infrastructure` (not `backend/Application`).
+2. Business logic in `SupportTickets.Api/Services/` today — thin controllers in `Controllers/`.
+3. Status changes **only** through `TicketStatusTransitionService` + `PATCH .../status`.
+4. Rules in `SupportTickets.Domain/Rules/TransitionMap.cs`.
+5. Do not document `GET /api/users` as done until `UsersController` exists.
+6. Update root docs when API or model changes.
 
-## Suggested Cursor habits
+## Before frontend work
 
-- Start design/implementation chats with a pointer to `project-context.md`.
-- Paste or reference the relevant phase prompt file (`planning.md`, `design.md`, etc.).
-- After substantive AI help, update `final-ai-usage-summary.md`.
+- Implement or stub `GET /api/users` for dropdowns.
+- CORS already enabled in `Program.cs`.
+- API dev URL: `http://localhost:5189`.
 
-## Optional `.cursor/rules`
+## Before integration tests
 
-_If project rules are added later, summarize them here and keep this file in sync._
+- See 25-pair transition matrix in planning conversation.
+- Expect 409 for invalid transitions, not 400.
+
+## Doc sync
+
+After substantive changes, update: `api-contract.md`, `acceptance-criteria.md`, `implementation-plan.md`, `ai-prompts/planning.md`.

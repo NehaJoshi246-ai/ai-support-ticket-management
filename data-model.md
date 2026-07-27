@@ -2,120 +2,100 @@
 
 ## Overview
 
-EF Core 8 over **SQLite** for the Support Ticket Management assessment option.
-
-Entities: **User** (seeded), **Ticket**, **TicketComment**.
+EF Core 8 over **SQLite**.  
+Projects: `SupportTickets.Domain` (entities), `SupportTickets.Infrastructure` (DbContext, migrations, seed).
 
 ## Entities
 
 ### User (seeded only)
 
-| Column | Type | Constraints |
-|--------|------|-------------|
+| Column | Type | Notes |
+|--------|------|-------|
 | Id | int | PK, identity |
 | Name | string(100) | required |
-| Email | string(200) | required, unique |
+| Email | string(200) | required, unique index |
+| Role | int | `UserRole` enum |
 
-Populated via Infrastructure seed (`UserSeed`). No runtime user writes.
+**Seed:** 10 users in migration via `DataSeeder`. No runtime writes.
 
 ### Ticket
 
-| Column | Type | Constraints |
-|--------|------|-------------|
+| Column | Type | Notes |
+|--------|------|-------|
 | Id | int | PK, identity |
 | Title | string(200) | required |
 | Description | string(4000) | required |
-| Priority | int / enum | Low, Medium, High, Critical |
-| Status | int / enum | see state machine |
-| AssignedToId | int | FK → User, nullable |
-| CreatedById | int | FK → User, required |
-| CreatedAt | DateTimeOffset | required, set on insert |
+| Priority | int | `TicketPriority` |
+| Status | int | `TicketStatus` |
+| AssignedToId | int? | FK → User, SET NULL on delete |
+| CreatedById | int | FK → User, RESTRICT on delete |
+| CreatedAt | DateTimeOffset | TEXT in SQLite |
 
-**Defaults on create:** `Status = Open`, `CreatedAt = UtcNow`.
-
-**Not updatable:** `Id`, `CreatedById`, `CreatedAt`.
-
-**Not via general update:** `Status` — changed only through the status transition service/endpoint.
+Indexes: `Status`, `Priority`, `AssignedToId`, `CreatedById`.
 
 ### TicketComment
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| Id | int | PK, identity |
-| TicketId | int | FK → Ticket, required, cascade delete |
+| Column | Type | Notes |
+|--------|------|-------|
+| Id | int | PK |
+| TicketId | int | FK → Ticket, CASCADE delete |
 | Body | string(4000) | required |
-| CreatedById | int | FK → User, required |
-| CreatedAt | DateTimeOffset | required, set on insert |
+| CreatedById | int | FK → User, RESTRICT |
+| CreatedAt | DateTimeOffset | TEXT in SQLite |
 
-Comments are append-only in v1 (no edit/delete unless scope expands).
+Index: `TicketId`, `CreatedById`.
 
-## Enums
+## Enums (`SupportTickets.Domain.Enums`)
 
 ### TicketStatus
 
-| Value | Notes |
-|-------|-------|
-| Open | Initial state |
-| InProgress | Work started |
-| Resolved | Fix/work complete, awaiting close |
-| Closed | Terminal |
-| Cancelled | Terminal |
+`Open` (0) | `InProgress` (1) | `Resolved` (2) | `Closed` (3) | `Cancelled` (4)
 
 ### TicketPriority
 
-`Low` | `Medium` | `High` | `Critical`
+`Low` (0) | `Medium` (1) | `High` (2) | `Critical` (3)
+
+### UserRole
+
+`Customer` (0) | `Agent` (1) | `Lead` (2) | `Admin` (3)
 
 ## Status state machine
 
-```
-Open ──► InProgress ──► Resolved ──► Closed
-  │            │
-  └────────────┴──► Cancelled
-```
+Implemented in `Domain/Rules/TransitionMap.cs`, enforced by `TicketStatusTransitionService`.
 
-| From | Allowed next |
-|------|--------------|
-| Open | InProgress, Cancelled |
-| InProgress | Resolved, Cancelled |
-| Resolved | Closed |
-| Closed | _(none)_ |
-| Cancelled | _(none)_ |
-
-Implemented in `Domain/Rules/TicketStatusTransitionRules.cs` and enforced by `TicketStatusTransitionService`.
+```
+Open → InProgress | Cancelled
+InProgress → Resolved | Cancelled
+Resolved → Closed
+```
 
 ## Relationships
 
 ```
-User 1───* Ticket        (CreatedBy)
-User 1───* Ticket        (AssignedTo)
+User 1───* Ticket (CreatedBy)
+User 1───* Ticket (AssignedTo, optional)
 User 1───* TicketComment (CreatedBy)
 Ticket 1───* TicketComment
 ```
 
-## ER diagram
+## EF Core details
 
-```
-┌─────────┐       ┌─────────┐       ┌────────────────┐
-│  User   │◄──────│ Ticket  │──────►│ TicketComment  │
-└─────────┘       └─────────┘       └────────────────┘
-   ▲                  │
-   │                  │
-   └── CreatedBy / AssignedTo / Comment author
-```
+| Item | Location |
+|------|----------|
+| DbContext | `Infrastructure/Data/AppDbContext.cs` |
+| Configurations | `Infrastructure/Data/Configurations/*.cs` |
+| Migration | `20260724083521_InitialCreate` |
+| Seed | `Infrastructure/Seed/DataSeeder.cs` (HasData) |
+| Connection | `Data Source=support-tickets.db` in `appsettings.json` |
 
-## EF Core / SQLite notes
+## JSON serialization
 
-- **DbContext:** `AppDbContext` in `Infrastructure/Data/`.
-- **Configurations:** fluent API per entity (`TicketConfiguration`, etc.).
-- **Connection:** `Data Source=support-tickets.db` (path in `appsettings.Development.json`).
-- **Migrations:** under `Infrastructure/Migrations/`.
-- **Indexes:** `Tickets(Status)`, `Tickets(Priority)`, `Tickets(AssignedToId)`, `TicketComments(TicketId)`.
-- **Delete behavior:** cascade delete comments when a ticket is removed (if delete is ever added; otherwise unused).
+Enums serialize as **PascalCase strings** (`JsonStringEnumConverter` in `Program.cs`).
 
-## Seed & schema artifacts
+## Artifacts
 
-| Location | Purpose |
-|----------|---------|
-| `database/schema/` | Optional SQL dumps / notes |
-| `database/seed-data/` | Reference seed JSON/scripts |
-| `Infrastructure/Seed/UserSeed.cs` | Runtime EF seed for users |
+| Path | Purpose |
+|------|---------|
+| `database/setup-notes.md` | Local DB setup |
+| `database/schema/` | Placeholder (no SQL dump committed) |
+| `database/seed-data/` | Placeholder for reference exports |

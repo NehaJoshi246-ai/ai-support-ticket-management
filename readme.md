@@ -1,106 +1,91 @@
 # AI Support Ticket Management
 
-Support ticket management system with ASP.NET Core Web API, React frontend, EF Core 8, and integration tests.
+Support ticket management system — ASP.NET Core Web API backend (implemented), React frontend and integration tests (planned).
 
-## Stack
+## Stack (current)
 
-| Layer | Technology |
-|-------|------------|
-| Backend | ASP.NET Core Web API |
-| Frontend | React |
-| Database | EF Core 8 |
-| Testing | Integration Tests |
+| Layer | Technology | Status |
+|-------|------------|--------|
+| API | ASP.NET Core 8 (`SupportTickets.Api`) | ✅ |
+| Domain | `SupportTickets.Domain` | ✅ |
+| Database | EF Core 8 + SQLite | ✅ |
+| Frontend | React | ⬜ Not started |
+| Tests | Integration tests | ⬜ Not started |
 
 ## Documentation
 
 | Document | Purpose |
 |----------|---------|
-| [candidate-info.md](candidate-info.md) | Candidate / project ownership info |
-| [tool-workflow.md](tool-workflow.md) | Tools and AI-assisted workflow |
-| [requirements-analysis.md](requirements-analysis.md) | Requirements breakdown |
-| [acceptance-criteria.md](acceptance-criteria.md) | Acceptance criteria |
-| [implementation-plan.md](implementation-plan.md) | Implementation plan |
-| [design-notes.md](design-notes.md) | Architecture and design decisions |
-| [api-contract.md](api-contract.md) | API contract |
-| [data-model.md](data-model.md) | Data model |
-| [ui-flow.md](ui-flow.md) | UI flows |
-| [test-strategy.md](test-strategy.md) | Test strategy |
-| [test-results.md](test-results.md) | Test results |
-| [debugging-notes.md](debugging-notes.md) | Debugging notes |
-| [code-review-notes.md](code-review-notes.md) | Code review notes |
-| [review-fixes.md](review-fixes.md) | Fixes from review |
-| [pr-description.md](pr-description.md) | Pull request description |
-| [reflection.md](reflection.md) | Reflection |
-| [final-ai-usage-summary.md](final-ai-usage-summary.md) | Final AI usage summary |
+| [requirements-analysis.md](requirements-analysis.md) | Scope and requirements |
+| [acceptance-criteria.md](acceptance-criteria.md) | Done / not done checklist |
+| [implementation-plan.md](implementation-plan.md) | Phase tracking |
+| [design-notes.md](design-notes.md) | Architecture (as built) |
+| [api-contract.md](api-contract.md) | REST endpoints |
+| [data-model.md](data-model.md) | Entities and enums |
+| [ui-flow.md](ui-flow.md) | Target UI flows |
+| [database/setup-notes.md](database/setup-notes.md) | SQLite setup |
+| [test-strategy.md](test-strategy.md) | Test plan |
+| [code-review-notes.md](code-review-notes.md) | Service review |
+| [debugging-notes.md](debugging-notes.md) | Debug log |
 
 ## Getting started
 
-Local setup for a clean machine with **.NET 8 SDK** and **Node.js** only.  
-See [database/setup-notes.md](database/setup-notes.md) for database details.
+See [database/setup-notes.md](database/setup-notes.md) for DB details.
 
-### 1. Prerequisites
+### Prerequisites
 
-- .NET SDK version: _[e.g. 8.0.x — fill after verifying]_
-- Node.js version: _[e.g. 20 LTS — fill after verifying]_
-- Optional: `dotnet-ef` global tool (only if applying migrations manually)
-- OS notes: _[any Windows/macOS/Linux caveats]_
+- .NET 8 SDK
+- Node.js (for frontend when added)
+- Optional: `dotnet-ef` for manual migrations
 
-### 2. Clone the repository
+### Backend (implemented)
 
-- Clone URL / branch
-- Working directory name
+```bash
+cd src
+dotnet build SupportTickets.sln
+dotnet run --project SupportTickets.Api
+```
 
-### 3. Backend (ASP.NET Core API)
+- Swagger: `http://localhost:5189/swagger` (Development)
+- SQLite file: `src/SupportTickets.Api/support-tickets.db` (created on first run)
+- Migrations apply automatically on startup
 
-- Restore & build the solution (`src/SupportTickets.sln`)
-- Where config lives (`appsettings.json`, optional `appsettings.Development.json`)
-- Run the API project (`src/SupportTickets.Api`)
-- Default URL / Swagger: _[e.g. http://localhost:5189/swagger]_
-- Note: migrations run automatically on startup; SQLite file created on first run
+### Verify API
 
-### 4. Database (SQLite)
+```bash
+curl http://localhost:5189/api/health
+curl http://localhost:5189/api/tickets
+```
 
-- Pointer to [database/setup-notes.md](database/setup-notes.md)
-- One-line summary: no separate DB install; file `support-tickets.db` beside the API
-- How to reset local data (delete `.db` file and restart)
+### Frontend
 
-### 5. Frontend (React)
+Not in repo yet — planned at `src/frontend/ticket-ui/`.
 
-- App location: _[e.g. `src/frontend/ticket-ui` when present]_
-- Install dependencies (`npm install` / `npm ci`)
-- API base URL / dev proxy / `.env` variable name
-- Run dev server
-- Default UI URL: _[e.g. http://localhost:5173]_
+### Tests
 
-### 6. Verify it works
+Not in repo yet — planned under `tests/`.
 
-- API health or Swagger smoke check
-- `GET /api/users` returns seeded users
-- `GET /api/tickets` returns sample tickets
-- UI loads ticket list
-
-### 7. Tests (optional)
-
-- Integration test project location: _[e.g. `tests/`]_
-- Command to run tests
-- Note on test database (in-memory / separate SQLite file)
-
-### 8. Common issues
-
-- Port already in use
-- CORS / wrong API URL in frontend
-- Missing `support-tickets.db` (first run not completed)
-- `dotnet-ef` not found (only needed for manual migrations)
-
-### 9. Project layout (quick reference)
+## Project layout
 
 ```
 src/
   SupportTickets.sln
-  SupportTickets.Api/          # Web API entry point
-  SupportTickets.Domain/       # Entities, enums, TransitionMap
+  SupportTickets.Api/           # Controllers, Services, DTOs
+  SupportTickets.Domain/        # Entities, TransitionMap, exceptions
   SupportTickets.Infrastructure/ # EF Core, migrations, seed
-  frontend/ticket-ui/          # React app (when present)
-tests/                         # Integration tests
-database/                      # Setup notes, schema, seed reference
+tests/                          # (empty — integration tests planned)
+database/                       # setup-notes, schema placeholder
+ai-prompts/                     # Prompt log by phase
 ```
+
+## API quick reference
+
+| Method | Path |
+|--------|------|
+| GET | `/api/health` |
+| GET/POST | `/api/tickets` |
+| GET/PUT | `/api/tickets/{id}` |
+| PATCH | `/api/tickets/{id}/status` |
+| GET/POST | `/api/tickets/{id}/comments` |
+
+`GET /api/users` — not implemented yet.

@@ -1,129 +1,79 @@
 # UI Flow
 
-React SPA under `src/frontend/ticket-ui/` calling the REST API defined in `api-contract.md`.
+**Status:** Not implemented — no `src/frontend/` yet.  
+This document describes the **target** UI against the **current** API.
 
-## Primary screens
+## API available today
 
-| Screen | Purpose |
-|--------|---------|
-| **Ticket list** | Browse tickets; show status, priority, assignee, creator |
-| **Create ticket** | New ticket form |
-| **Ticket detail** | View/edit fields, transition status, read/add comments |
+| Action | Endpoint | Status |
+|--------|----------|--------|
+| Health check | `GET /api/health` | ✅ |
+| List tickets | `GET /api/tickets` | ✅ |
+| Ticket detail | `GET /api/tickets/{id}` | ✅ |
+| Create ticket | `POST /api/tickets` | ✅ |
+| Update fields | `PUT /api/tickets/{id}` | ✅ |
+| Change status | `PATCH /api/tickets/{id}/status` | ✅ |
+| List comments | `GET /api/tickets/{id}/comments` | ✅ |
+| Add comment | `POST /api/tickets/{id}/comments` | ✅ |
+| List users (dropdowns) | `GET /api/users` | ⬜ **Build API first or hardcode seed ids** |
 
-## API usage by screen
+Default API URL (dev): `http://localhost:5189` (`launchSettings.json`).
 
-| Action | HTTP call |
-|--------|-----------|
-| Load users (dropdowns) | `GET /api/users` |
-| List tickets | `GET /api/tickets` |
-| Open ticket | `GET /api/tickets/{id}` |
-| Create ticket | `POST /api/tickets` |
-| Save field changes | `PUT /api/tickets/{id}` |
-| Change status | `PATCH /api/tickets/{id}/status` |
-| Load comments | `GET /api/tickets/{id}/comments` |
-| Add comment | `POST /api/tickets/{id}/comments` |
+## Target screens
 
-Field edits and status changes use **separate** API calls — the UI should not bundle status into the save form.
+### 1. Ticket list
 
-## Status UI rules
+- Load `GET /api/tickets`.
+- **Search** — client-side filter on title/description.
+- **Status filter** — dropdown (All, Open, InProgress, …).
+- Show priority, status, assignee, creator.
+- States: loading spinner, empty message, error banner.
 
-Show only valid next statuses for the current ticket:
+### 2. Create ticket
 
-| Current status | Actions shown |
-|----------------|---------------|
-| Open | **Start** (→ InProgress), **Cancel** (→ Cancelled) |
-| InProgress | **Resolve** (→ Resolved), **Cancel** (→ Cancelled) |
-| Resolved | **Close** (→ Closed) |
-| Closed | Status actions hidden / disabled |
-| Cancelled | Status actions hidden / disabled |
+- Fields: title, description, priority, createdById, optional assignedToId.
+- Submit `POST /api/tickets`.
+- Redirect to detail on success; show field errors from 400 response.
 
-Each action calls `PATCH /api/tickets/{id}/status` with the target status, then refreshes the ticket.
+### 3. Ticket detail
 
-## Happy paths
+- Load ticket + `GET /api/tickets/{id}/comments`.
+- **Edit block:** title, description, priority, assignee → `PUT` (no status).
+- **Status dropdown:** only valid next statuses (mirror `TransitionMap` until API adds `allowedNextStatuses`).
+- **Comments:** thread + add form → `POST` comment.
+- Terminal tickets: disable status control.
 
-### Create ticket
+## Status UI rules (mirror `TransitionMap`)
 
-1. User opens **Create Ticket**.
-2. Form: title, description, priority, **Created by** (user dropdown), optional **Assign to**.
-3. Submit → `POST /api/tickets`.
-4. Redirect to ticket detail or list; new ticket shows status **Open**.
+| Current | Show options |
+|---------|----------------|
+| Open | InProgress, Cancelled |
+| InProgress | Resolved, Cancelled |
+| Resolved | Closed |
+| Closed | None |
+| Cancelled | None |
 
-### Browse tickets
+Each change → `PATCH /api/tickets/{id}/status`. On **409**, show `detail` and `allowedNextStatuses` from response.
 
-1. **Ticket list** loads via `GET /api/tickets`.
-2. Row click → detail page via `GET /api/tickets/{id}`.
-3. Detail also loads comments: `GET /api/tickets/{id}/comments`.
+## Error handling
 
-### Edit ticket fields
+| Case | UI behavior |
+|------|-------------|
+| List/detail load fails | Error state + retry |
+| Empty ticket list | Message + link to create |
+| 400 validation | Inline field errors |
+| 404 ticket | Not-found view |
+| 409 bad transition | Banner with server message |
 
-1. On detail, user edits title, description, priority, or assignee.
-2. **Save** → `PUT /api/tickets/{id}` (no status in payload).
-3. UI refreshes ticket from response.
-
-### Transition status
-
-1. User clicks a status action (e.g. **Start work**).
-2. UI calls `PATCH /api/tickets/{id}/status` with `{ "status": "InProgress" }`.
-3. On success, refresh ticket and re-render available actions.
-4. On **400**, show server message (should be rare if actions are filtered).
-
-### Add comment
-
-1. On detail, user types in comment box and selects author (or uses current context user).
-2. Submit → `POST /api/tickets/{id}/comments`.
-3. Append new comment to thread (or reload comment list).
-
-## Ticket detail layout (draft)
+## Planned frontend layout
 
 ```
-┌─────────────────────────────────────────────┐
-│ Title                          [status badge]│
-│ Priority · Assignee · Created by · Date     │
-├─────────────────────────────────────────────┤
-│ Description (editable)                       │
-│ [Save changes]                               │
-├─────────────────────────────────────────────┤
-│ Status actions: [Start] [Cancel]  …          │
-├─────────────────────────────────────────────┤
-│ Comments                                     │
-│   • Alex — "Reproduced in staging…"         │
-│   [Add comment]                              │
-└─────────────────────────────────────────────┘
+src/frontend/ticket-ui/
+  src/
+    api/          client.ts, tickets.ts, comments.ts, users.ts
+    pages/        TicketListPage, TicketCreatePage, TicketDetailPage
+    components/   StatusBadge, CommentThread, ...
+    types/        mirror API DTOs
 ```
 
-## Error / empty states
-
-| State | Behavior |
-|-------|----------|
-| No tickets | Empty list message + link to create |
-| Ticket not found | 404 page or inline error |
-| Validation errors | Inline on create/edit forms |
-| Invalid transition | Toast/banner with API `detail` |
-| Terminal ticket | Disable status actions; field edit may still be allowed |
-
-## Navigation
-
-```
-Ticket List ──► Create Ticket
-     │
-     └──► Ticket Detail
-              ├── Save fields (PUT)
-              ├── Status actions (PATCH …/status)
-              └── Comment thread (GET/POST …/comments)
-```
-
-## Frontend module layout (aligns with backend separation)
-
-```
-src/frontend/ticket-ui/src/
-├── api/
-│   ├── client.ts          # base fetch, error handling
-│   ├── tickets.ts
-│   ├── comments.ts
-│   └── users.ts
-├── pages/
-├── components/
-└── types/
-```
-
-Each `api/*.ts` module mirrors one backend resource — keeps pages free of URL/binding details.
+CORS is already enabled on the API for browser dev.

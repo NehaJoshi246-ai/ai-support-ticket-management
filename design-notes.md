@@ -2,177 +2,132 @@
 
 ## Goals
 
-- Deliver the assessment **Support Ticket Management** option with a maintainable split between API, business logic, persistence, and UI.
-- Keep controllers thin; put rules (especially status transitions) in a service layer.
-- Use EF Core 8 with **SQLite** for local persistence.
-- Expose a REST API consumed by a **React** SPA.
+- Support Ticket Management assessment with clear separation: HTTP controllers, services, domain rules, EF persistence.
+- SQLite for local dev; React SPA planned but not yet built.
 
-## System overview
+## Implemented architecture
 
 ```
-React SPA (src/frontend)
+React SPA (planned: src/frontend/ticket-ui)
         │  REST / JSON
         ▼
-ASP.NET Core Web API (src/backend/Api)
-        │  calls interfaces
-        ▼
-Application services (src/backend/Application)
-        │  uses entities / rules
-        ▼
-Domain (src/backend/Domain)
+SupportTickets.Api
+  ├── Controllers/     TicketsController, TicketCommentsController, HealthController
+  ├── Services/      TicketService, TicketStatusTransitionService, TicketCommentService
+  ├── DTOs/          Request/response + validation attributes
+  └── Validation/    AllowedTicketPriority, AllowedTicketStatus parsers
         │
         ▼
-Infrastructure — EF Core + SQLite (src/backend/Infrastructure)
+SupportTickets.Domain
+  ├── Entities/      User, Ticket, TicketComment
+  ├── Enums/         TicketStatus, TicketPriority, UserRole
+  ├── Rules/         TransitionMap
+  └── Exceptions/    NotFoundException, InvalidTransitionException, ValidationException
+        │
+        ▼
+SupportTickets.Infrastructure
+  ├── Data/          AppDbContext, fluent configurations
+  ├── Migrations/    InitialCreate
+  └── Seed/          DataSeeder (HasData in migration)
 ```
 
-## Proposed `src/` layout
+**Note:** Services live in the **Api** project today, not a separate Application layer. Domain has no EF references.
+
+## Actual `src/` layout
 
 ```
 src/
-├── SupportTicketManagement.sln
-│
-├── backend/
-│   ├── Api/                              # HTTP surface only
-│   │   ├── Controllers/
-│   │   │   ├── TicketsController.cs
-│   │   │   ├── TicketCommentsController.cs
-│   │   │   └── UsersController.cs
-│   │   ├── Middleware/                   # Optional global exception handling
-│   │   ├── Program.cs
-│   │   └── appsettings.json
-│   │
-│   ├── Application/                      # Use cases + orchestration
-│   │   ├── DTOs/
-│   │   │   ├── Tickets/
-│   │   │   ├── Comments/
-│   │   │   └── Users/
-│   │   ├── Interfaces/
-│   │   │   ├── ITicketService.cs
-│   │   │   ├── ITicketCommentService.cs
-│   │   │   ├── ITicketStatusTransitionService.cs
-│   │   │   └── IUserService.cs
-│   │   ├── Services/
-│   │   │   ├── TicketService.cs
-│   │   │   ├── TicketCommentService.cs
-│   │   │   ├── TicketStatusTransitionService.cs
-│   │   │   └── UserService.cs
-│   │   └── Mapping/                      # Entity ↔ DTO mapping (manual or Mapster)
-│   │
-│   ├── Domain/                           # Core model + invariants
-│   │   ├── Entities/
-│   │   │   ├── User.cs
-│   │   │   ├── Ticket.cs
-│   │   │   └── TicketComment.cs
-│   │   ├── Enums/
-│   │   │   ├── TicketStatus.cs
-│   │   │   └── TicketPriority.cs
-│   │   ├── Rules/
-│   │   │   └── TicketStatusTransitionRules.cs   # Allowed next-status map
-│   │   └── Exceptions/
-│   │       ├── InvalidStatusTransitionException.cs
-│   │       └── NotFoundException.cs
-│   │
-│   └── Infrastructure/                   # Persistence + seeding
-│       ├── Data/
-│       │   ├── AppDbContext.cs
-│       │   └── Configurations/           # IEntityTypeConfiguration per entity
-│       ├── Migrations/
-│       └── Seed/
-│           └── UserSeed.cs
-│
-└── frontend/
-    └── ticket-ui/                        # React app (Vite or CRA)
-        └── src/
-            ├── api/                      # fetch wrappers per resource
-            ├── components/
-            ├── pages/
-            │   ├── TicketListPage.tsx
-            │   ├── TicketCreatePage.tsx
-            │   └── TicketDetailPage.tsx
-            ├── hooks/
-            └── types/                    # TS types mirroring API DTOs
+├── SupportTickets.sln
+├── SupportTickets.Api/
+│   ├── Controllers/
+│   │   ├── TicketsController.cs
+│   │   ├── TicketCommentsController.cs
+│   │   └── HealthController.cs
+│   ├── Services/
+│   │   ├── TicketService.cs
+│   │   ├── TicketStatusTransitionService.cs
+│   │   └── TicketCommentService.cs
+│   ├── DTOs/
+│   ├── Validation/
+│   └── Program.cs
+├── SupportTickets.Domain/
+│   ├── Entities/
+│   ├── Enums/
+│   ├── Rules/TransitionMap.cs
+│   └── Exceptions/
+└── SupportTickets.Infrastructure/
+    ├── Data/
+    ├── Migrations/
+    └── Seed/DataSeeder.cs
 ```
 
-### Layer responsibilities
+`src/frontend/` — **not present yet**.
 
-| Layer | Owns | Does not own |
-|-------|------|--------------|
-| **Api** | Routing, HTTP status codes, binding request/response DTOs | Business rules, EF queries |
-| **Application** | Ticket/comment workflows, validation orchestration, DTO mapping | HTTP concerns, DbContext details |
-| **Domain** | Entities, enums, transition rules, domain exceptions | Database access |
-| **Infrastructure** | DbContext, migrations, SQLite connection, seed data | HTTP or UI logic |
+## Status transition design (as built)
 
-Controllers should delegate immediately to application services and translate domain exceptions to HTTP responses (e.g. invalid transition → 400, not found → 404).
+- **PUT** rejects `status` field (DTO `IValidatableObject` → 400).
+- **PATCH** ` /api/tickets/{id}/status` body: `{ "status": "InProgress" }`.
+- `TicketStatusTransitionService` checks `TransitionMap`; throws `InvalidTransitionException` → controller maps to **409** with:
+  - `detail` — human-readable message with from/to and allowed list
+  - extensions: `fromStatus`, `toStatus`, `allowedNextStatuses`
+- Same from/to status → **200** idempotent no-op.
 
-## Status transition design
+## Validation design (as built)
 
-Status changes are **not** accepted on the general ticket update endpoint. They go through a dedicated action:
+| Layer | Mechanism |
+|-------|-----------|
+| HTTP / DTO | Data annotations + custom `AllowedTicketPriority` / `AllowedTicketStatus` |
+| Controller | `ValidationProblemDetails` for model state; catch domain `ValidationException` |
+| Service | `EnsureUserExistsAsync` → `ValidationException` on bad user id |
+| Missing entity | `NotFoundException` → 404 in controllers |
 
-`PATCH /api/tickets/{id}/status`
+## API surface (implemented)
 
-This keeps field edits and lifecycle moves separate:
+| Method | Path | Controller |
+|--------|------|------------|
+| GET | `/api/health` | HealthController |
+| GET | `/api/tickets` | TicketsController |
+| GET | `/api/tickets/{id}` | TicketsController |
+| POST | `/api/tickets` | TicketsController |
+| PUT | `/api/tickets/{id}` | TicketsController |
+| PATCH | `/api/tickets/{id}/status` | TicketsController |
+| GET | `/api/tickets/{ticketId}/comments` | TicketCommentsController |
+| POST | `/api/tickets/{ticketId}/comments` | TicketCommentsController |
 
-- **TicketService** — create, read, list, update title/description/priority/assignee.
-- **TicketStatusTransitionService** — load ticket, ask `TicketStatusTransitionRules` if the move is allowed, persist new status, return updated ticket.
-
-The rules live in Domain (`TicketStatusTransitionRules`); the service applies them and throws `InvalidStatusTransitionException` when rejected.
-
-```
-Open → InProgress | Cancelled
-InProgress → Resolved | Cancelled
-Resolved → Closed
-```
-
-Closed and Cancelled are terminal.
-
-## Comments design
-
-Comments are child records on a ticket — useful for support notes during In Progress / Resolved work.
-
-- Stored as `TicketComment` with FK to `Ticket` and `User` (author).
-- Listed and created via nested routes under a ticket.
-- Comments do not change ticket status; status still uses the dedicated PATCH endpoint.
+**Not implemented:** `GET /api/users`
 
 ## Persistence
 
-- **Provider:** SQLite (single file, e.g. `support-tickets.db`, under backend or `database/`).
-- **ORM:** EF Core 8 with fluent configurations in Infrastructure.
-- **Users:** seeded on startup or via migration seed; read-only through API.
+- SQLite file: `support-tickets.db` (relative to API working directory).
+- Connection: `appsettings.json` → `Data Source=support-tickets.db`.
+- `Program.cs` calls `db.Database.Migrate()` on startup.
 
-## Frontend design
+## Seed data (`DataSeeder`)
 
-- React SPA talks to the API over REST (JSON).
-- Central `api/` module per resource (`tickets`, `comments`, `users`).
-- Ticket detail page combines:
-  - field edit form → `PUT /api/tickets/{id}`
-  - status action buttons/dropdown → `PATCH /api/tickets/{id}/status`
-  - comment thread → `GET/POST /api/tickets/{id}/comments`
-- UI only offers valid next statuses; server remains authoritative.
+- 10 users (3 Customer, 3 Agent, 2 Lead, 2 Admin).
+- 5 tickets covering all statuses.
+- 2 comments on InProgress and Resolved tickets.
 
-## API surface (summary)
+## Known gaps (see `code-review-notes.md`)
 
-See `api-contract.md` for full request/response shapes.
-
-| Resource | Endpoints |
-|----------|-----------|
-| Users | `GET /api/users` |
-| Tickets | `GET/POST /api/tickets`, `GET/PUT /api/tickets/{id}`, `PATCH /api/tickets/{id}/status` |
-| Comments | `GET/POST /api/tickets/{ticketId}/comments` |
+- No optimistic concurrency on `Ticket`.
+- `TicketResponse` mapping duplicated in transition service vs `TicketService.Map`.
+- No `allowedNextStatuses` on ticket JSON yet — frontend should use `TransitionMap` mirror or add to API.
+- Services lack null-guard on request parameters.
 
 ## Decisions log
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
-| 2026-07-24 | Assessment option: Support Ticket Management | Assignment scope |
-| 2026-07-24 | Users seeded only | No user write APIs |
-| 2026-07-24 | Status via dedicated PATCH endpoint | Explicit validation path, thin controllers |
-| 2026-07-24 | Business logic in Application services | Clean separation from HTTP layer |
-| 2026-07-24 | SQLite for local dev | Simple single-file persistence |
-| 2026-07-24 | Comments as nested ticket resource | Support notes without coupling to status updates |
-| 2026-07-24 | General PUT excludes status | Prevents accidental lifecycle bypass |
+| 2026-07-24 | Assessment: Support Ticket Management | Assignment |
+| 2026-07-24 | SQLite + EF Core 8 | Local assessment simplicity |
+| 2026-07-24 | Services in Api project | Faster scaffold; Application layer deferred |
+| 2026-07-24 | `TransitionMap` in Domain | Single rule source |
+| 2026-07-24 | Invalid transition → 409 | Business rule conflict, not malformed input |
+| 2026-07-24 | `InvalidTransitionException` with allowed list in message | Frontend-friendly errors |
 
-## Alternatives considered
+## Alternatives not used
 
-- **Status on general PUT** — rejected; dedicated endpoint makes transition validation explicit and testable.
-- **Fat controllers** — rejected; services keep rules reusable for integration tests.
-- **Repository layer** — deferred; services can use `AppDbContext` directly until complexity warrants abstraction.
+- Separate Application project — deferred.
+- `GET /api/users` — planned, not built.
+- Status on general PUT — rejected.

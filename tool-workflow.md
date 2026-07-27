@@ -4,24 +4,26 @@
 
 | Tool | Purpose |
 |------|---------|
-| Cursor / AI assistant | Planning, scaffolding, implementation assistance |
-| ASP.NET Core / .NET CLI | Backend API and EF Core |
-| React / npm | Frontend UI |
-| Git / GitHub | Version control and PR flow |
+| Cursor / AI assistant | Planning, backend implementation, docs |
+| .NET 8 SDK | `SupportTickets.Api`, Domain, Infrastructure |
+| EF Core 8 + SQLite | Local persistence |
+| `dotnet-ef` | Migrations (optional; API auto-migrates) |
+| Node.js | React frontend (planned) |
+| Git | Version control |
 
-## Workflow
+## Workflow (actual progress)
 
-1. Stage repository documentation structure (this phase).
-2. Analyze requirements and define acceptance criteria.
-3. Design data model, API contract, and UI flows.
-4. Implement backend (Web API + EF Core 8).
-5. Implement frontend (React).
-6. Write and run integration tests.
-7. Debug, review, fix, and document results.
-8. Prepare PR description, reflection, and AI usage summary.
+1. ✅ Stage repository docs and folders
+2. ✅ Lock assessment requirements and design
+3. ✅ Scaffold `SupportTickets.sln` (Api, Domain, Infrastructure)
+4. ✅ Implement ticket, status, comment APIs
+5. ⬜ Add `GET /api/users`
+6. ⬜ React frontend
+7. ⬜ Integration tests + state machine matrix
+8. ⬜ Review fixes and delivery docs
 
 ## Conventions
 
-- Prefer small, reviewable changes.
-- Keep docs updated as decisions change.
-- Record AI assistance in `final-ai-usage-summary.md`.
+- Docs updated to match code (not aspirational Application layer paths).
+- Status changes only via `PATCH /api/tickets/{id}/status`.
+- Log AI usage in `final-ai-usage-summary.md` and prompts under `ai-prompts/`.

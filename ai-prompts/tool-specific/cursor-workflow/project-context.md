@@ -2,40 +2,49 @@
 
 ## Project
 
-AI Support Ticket Management
+AI Support Ticket Management — assessment option.
 
-## Stack
+## Stack (as implemented)
 
-- Backend: ASP.NET Core Web API
-- Frontend: React
-- Database: EF Core 8
-- Testing: Integration tests
+| Piece | Path / tech |
+|-------|-------------|
+| API | `src/SupportTickets.Api` — ASP.NET Core 8 |
+| Domain | `src/SupportTickets.Domain` |
+| EF + SQLite | `src/SupportTickets.Infrastructure` |
+| Frontend | **Not started** |
+| Tests | **Not started** (`tests/` empty) |
 
-## Repository layout (target)
+## Domain rules
+
+- **User:** seeded only (10 users, `UserRole` enum)
+- **Ticket:** Id, Title, Description, Priority, Status, AssignedToId, CreatedById, CreatedAt
+- **TicketComment:** nested under tickets
+- **TransitionMap:** Open→InProgress|Cancelled; InProgress→Resolved|Cancelled; Resolved→Closed
+- Status via `PATCH /api/tickets/{id}/status` only; invalid → **409**
+
+## API implemented
 
 ```
-src/                  Application source (API + React)
-tests/                Integration tests
-database/             Setup notes, schema, seed data
-ai-prompts/           Prompt logs by phase
-*.md                  Planning / design / delivery docs at root
+GET  /api/health
+GET  /api/tickets, GET/PUT/POST /api/tickets/{id}
+PATCH /api/tickets/{id}/status
+GET/POST /api/tickets/{ticketId}/comments
 ```
 
-## Assessment option
+**Missing:** `GET /api/users`
 
-Support Ticket Management
+## Services (in Api project)
 
-- **User:** seeded only
-- **Ticket:** Id, Title, Description, Priority, Status, AssignedTo, CreatedBy, CreatedAt
-- **Status machine:** Open→InProgress|Cancelled; InProgress→Resolved|Cancelled; Resolved→Closed
+- `TicketService` — field CRUD
+- `TicketStatusTransitionService` — PATCH status
+- `TicketCommentService` — comments
 
 ## Current phase
 
-Requirements/design locked from assessment option; application code next.
+Backend MVP done; next: users endpoint, frontend, integration tests, review fixes.
 
 ## Constraints
 
-- Prefer docs and structure before coding.
-- Keep API, data model, UI, and tests aligned with root markdown contracts.
-- Enforce status transitions server-side.
-- Record AI usage in `final-ai-usage-summary.md` and prompts under `ai-prompts/`.
+- Docs must match code (no fictional Application layer in instructions).
+- SQLite local only; `support-tickets.db` gitignored.
+- Record work in `ai-prompts/` and `final-ai-usage-summary.md`.

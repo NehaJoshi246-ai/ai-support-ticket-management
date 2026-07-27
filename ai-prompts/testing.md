@@ -2,24 +2,34 @@
 
 ## Purpose
 
-Prompts used to define and implement integration tests under `tests/`.
+Integration test planning and execution prompts.
 
-## Prompts
+## Status
 
-### Test strategy
+No test project in repo yet. Strategy in [test-strategy.md](../test-strategy.md).
 
-```
-Using test-strategy.md and api-contract.md, propose integration tests for ticket
-create/list/get/update/validation scenarios.
-```
+## Prompts (planned)
 
-### Implement tests
+### Transition matrix review
 
 ```
-Add integration tests under tests/ for the Web API using WebApplicationFactory
-(or equivalent) and record results in test-results.md.
+List all 25 (fromStatus, toStatus) pairs for review before writing tests.
+Valid → 200, invalid → 409, same-status → 200 idempotent.
+```
+
+### Integration test scaffold
+
+```
+WebApplicationFactory for SupportTickets.Api with SQLite test database.
+Cover tickets, comments, status matrix per test-strategy.md.
 ```
 
 ## Outcomes
 
-_TBD during testing._
+- 25-pair matrix documented in conversation (pending test code)
+- [test-results.md](../test-results.md) — manual smoke only so far
+
+## Manual smoke verified
+
+- Build succeeds
+- GET tickets, PATCH valid/invalid status, comment 404 on missing ticket

@@ -1,69 +1,68 @@
 # API Contract
 
 Base URL: `/api`  
-Content-Type: `application/json`
+Content-Type: `application/json`  
+Enums: PascalCase strings in JSON (`JsonStringEnumConverter`).
 
-## Conventions
+## Implementation status
 
-- Controllers are thin; services enforce business rules.
-- **Status changes are not allowed on `PUT /api/tickets/{id}`** — use `PATCH /api/tickets/{id}/status`.
-- Enum values in JSON use PascalCase strings (e.g. `"InProgress"`, `"Low"`).
-- Timestamps are ISO-8601 UTC.
+| Endpoint | Status |
+|----------|--------|
+| `GET /api/health` | ✅ Implemented |
+| Ticket CRUD + PATCH status | ✅ Implemented |
+| Comments GET/POST | ✅ Implemented |
+| `GET /api/users` | ⬜ **Not implemented** |
 
 ---
 
-## Users (read-only)
-
-Seeded users for creator, assignee, and comment author selection.
+## Health
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/users` | List all seeded users |
+| GET | `/api/health` | `{ "status": "ok" }` |
 
-### Response `200`
+---
 
-```json
-[
-  { "id": 1, "name": "Alex Agent", "email": "alex@example.com" }
-]
-```
+## Users (read-only) — **planned, not implemented**
 
-No POST/PUT/DELETE.
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/users` | List seeded users |
+
+Until implemented, use seed user ids 1–10 (see `database/setup-notes.md`) or inspect SQLite `Users` table.
 
 ---
 
 ## Tickets
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/tickets` | List tickets (newest first) |
-| GET | `/api/tickets/{id}` | Get ticket by id |
-| POST | `/api/tickets` | Create ticket (status = Open) |
-| PUT | `/api/tickets/{id}` | Update ticket fields (not status) |
-| PATCH | `/api/tickets/{id}/status` | Transition ticket status |
+| Method | Path | Status |
+|--------|------|--------|
+| GET | `/api/tickets` | ✅ List, newest by `CreatedAt` |
+| GET | `/api/tickets/{id}` | ✅ |
+| POST | `/api/tickets` | ✅ Creates as `Open` |
+| PUT | `/api/tickets/{id}` | ✅ Fields only; **no status** |
+| PATCH | `/api/tickets/{id}/status` | ✅ Lifecycle only |
 
-Optional query on list (later): `?status=Open&priority=High&assignedToId=2`
-
-### Ticket response
+### Ticket response (actual shape)
 
 ```json
 {
   "id": 1,
-  "title": "Cannot log in",
-  "description": "User sees 500 after password reset",
+  "title": "Cannot reset password",
+  "description": "Password reset email never arrives...",
   "priority": "High",
   "status": "Open",
-  "assignedToId": 2,
+  "assignedToId": 4,
   "assignedToName": "Alex Agent",
   "createdById": 1,
-  "createdByName": "Sam Support",
-  "createdAt": "2026-07-24T08:00:00Z"
+  "createdByName": "Sam Customer",
+  "createdAt": "2026-07-01T09:00:00+00:00"
 }
 ```
 
-### POST `/api/tickets` — create
+**Note:** `allowedNextStatuses` is **not** on the response yet. Frontend should mirror `TransitionMap` or add a field in a future API change.
 
-**Request**
+### POST `/api/tickets`
 
 ```json
 {
@@ -75,17 +74,10 @@ Optional query on list (later): `?status=Open&priority=High&assignedToId=2`
 }
 ```
 
-**Response `201`** — ticket body (status = `Open`, `createdAt` set by server).
+- **201** — created ticket (`status` = `Open`, `createdAt` set server-side).
+- **400** — `ValidationProblemDetails` with per-field errors.
 
-**Rules**
-
-- `title`, `description`, `priority`, `createdById` required.
-- `assignedToId` optional.
-- Client must not send `status` or `createdAt`.
-
-### PUT `/api/tickets/{id}` — update fields
-
-**Request**
+### PUT `/api/tickets/{id}`
 
 ```json
 {
@@ -96,17 +88,11 @@ Optional query on list (later): `?status=Open&priority=High&assignedToId=2`
 }
 ```
 
-**Response `200`** — updated ticket.
+- **200** — updated ticket.
+- **400** if `status` property present (directs to PATCH endpoint).
+- **404** if ticket not found.
 
-**Rules**
-
-- Updatable: `title`, `description`, `priority`, `assignedToId`.
-- **Not accepted:** `status`, `createdById`, `createdAt`.
-- If request includes `status`, return **400** with message directing client to the status endpoint.
-
-### PATCH `/api/tickets/{id}/status` — transition status
-
-**Request**
+### PATCH `/api/tickets/{id}/status`
 
 ```json
 {
@@ -114,93 +100,87 @@ Optional query on list (later): `?status=Open&priority=High&assignedToId=2`
 }
 ```
 
-**Response `200`** — ticket with new status.
-
-**Allowed transitions**
-
-| Current status | Request `status` may be |
-|----------------|---------------------------|
+| Current | Allowed `status` |
+|---------|------------------|
 | Open | InProgress, Cancelled |
 | InProgress | Resolved, Cancelled |
 | Resolved | Closed |
-| Closed | _(none — 400)_ |
-| Cancelled | _(none — 400)_ |
+| Closed | _(none)_ |
+| Cancelled | _(none)_ |
 
-**Errors**
-
-- **400** — invalid transition (e.g. Open → Resolved).
+- **200** — updated ticket; same status → idempotent 200.
+- **409** — invalid transition (`InvalidTransitionException`).
 - **404** — ticket not found.
 
-Example error body:
+**409 example:**
 
 ```json
 {
   "title": "Invalid status transition",
-  "detail": "Cannot transition from Open to Resolved. Allowed: InProgress, Cancelled.",
-  "status": 400
+  "detail": "Cannot transition from Open to Resolved. Allowed next statuses from Open: InProgress, Cancelled.",
+  "status": 409,
+  "fromStatus": "Open",
+  "toStatus": "Resolved",
+  "allowedNextStatuses": ["InProgress", "Cancelled"]
 }
 ```
 
 ---
 
-## Comments (nested under ticket)
+## Comments
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/tickets/{ticketId}/comments` | List comments for a ticket (oldest first) |
-| POST | `/api/tickets/{ticketId}/comments` | Add a comment |
+| Method | Path | Status |
+|--------|------|--------|
+| GET | `/api/tickets/{ticketId}/comments` | ✅ Oldest first |
+| POST | `/api/tickets/{ticketId}/comments` | ✅ |
 
 ### Comment response
 
 ```json
 {
-  "id": 10,
-  "ticketId": 1,
-  "body": "Reproduced in staging; investigating auth middleware.",
-  "createdById": 2,
-  "createdByName": "Alex Agent",
-  "createdAt": "2026-07-24T09:15:00Z"
+  "id": 1,
+  "ticketId": 2,
+  "body": "Reproduced on Safari 17.4...",
+  "createdById": 5,
+  "createdByName": "Morgan Agent",
+  "createdAt": "2026-07-01T12:00:00+00:00"
 }
 ```
 
-### POST `/api/tickets/{ticketId}/comments`
-
-**Request**
+### POST body
 
 ```json
 {
-  "body": "Reproduced in staging; investigating auth middleware.",
-  "createdById": 2
+  "body": "Reproduced in staging.",
+  "createdById": 4
 }
 ```
 
-**Response `201`** — created comment.
-
-**Rules**
-
-- Ticket must exist (**404** if not).
-- `body` and `createdById` required.
-- Comments do not change ticket status.
+- **201** — created comment.
+- **400** — empty body / bad user id (field errors).
+- **404** — ticket does not exist.
 
 ---
 
-## Common error responses
+## Error summary (as implemented)
 
 | Status | When |
 |--------|------|
-| 400 | Validation failure, invalid status transition, status sent on PUT |
-| 404 | Ticket, comment context, or referenced user not found |
-| 500 | Unexpected server error |
-
-Validation errors should return field-level detail where practical (ProblemDetails shape).
+| 400 | DTO validation (`ValidationProblemDetails`) |
+| 404 | Ticket not found; comment on missing ticket |
+| 409 | Invalid status transition |
+| 500 | Unhandled exceptions (e.g. unmapped `DbUpdateException`) |
 
 ---
 
-## Service mapping (implementation hint)
+## Service mapping (actual classes)
 
-| Endpoint | Application service |
-|----------|---------------------|
-| Ticket CRUD (except status) | `ITicketService` |
-| PATCH status | `ITicketStatusTransitionService` |
-| Comments | `ITicketCommentService` |
-| Users list | `IUserService` |
+| Concern | Class | Project |
+|---------|-------|---------|
+| Ticket CRUD (fields) | `TicketService` | Api |
+| Status transition | `TicketStatusTransitionService` | Api |
+| Comments | `TicketCommentService` | Api |
+| Rules | `TransitionMap` | Domain |
+| Persistence | `AppDbContext` | Infrastructure |
+
+No interfaces/DI abstractions — concrete scoped services registered in `Program.cs`.

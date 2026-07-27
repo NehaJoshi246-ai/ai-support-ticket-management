@@ -2,43 +2,48 @@
 
 ## Documentation staging
 
-- [x] Required root documentation files exist before application code.
-- [x] Assessment entities and status state machine captured in requirements/design docs.
+- [x] Required root documentation files exist.
+- [x] Docs aligned with implemented code (this pass).
 
-## Domain
+## Domain (implemented in code)
 
-- [ ] `User` is seeded only; no user write APIs required.
-- [ ] `Ticket` has: Id, Title, Description, Priority, Status, AssignedTo, CreatedBy, CreatedAt.
-- [ ] New tickets start as **Open**.
-- [ ] Status transitions enforce:
-  - Open → In Progress | Cancelled
-  - In Progress → Resolved | Cancelled
+- [x] `User` seeded only; no user write APIs.
+- [x] `User.Role` enum: Customer, Agent, Lead, Admin.
+- [x] `Ticket` fields: Id, Title, Description, Priority, Status, AssignedTo, CreatedBy, CreatedAt.
+- [x] `TicketComment` with TicketId, Body, CreatedById, CreatedAt.
+- [x] New tickets start as **Open**.
+- [x] Status transitions via `TransitionMap`:
+  - Open → InProgress | Cancelled
+  - InProgress → Resolved | Cancelled
   - Resolved → Closed
-- [ ] Invalid status transitions return a client error (e.g. 400).
-- [ ] Closed and Cancelled are terminal.
+- [x] Invalid transitions return **409 Conflict** (not 400).
+- [x] Closed and Cancelled are terminal.
 
 ## Backend (ASP.NET Core Web API)
 
-- [ ] API endpoints match `api-contract.md`.
-- [ ] Ticket create / list / get / update work end-to-end.
-- [ ] Assignment to seeded users works (`AssignedTo`).
-- [ ] EF Core 8 persists and retrieves ticket data correctly.
-- [ ] Validation and error responses are consistent.
+- [x] Ticket endpoints: GET list, GET by id, POST, PUT (no status).
+- [x] `PATCH /api/tickets/{id}/status` for lifecycle only.
+- [x] Comment endpoints: GET/POST `/api/tickets/{ticketId}/comments`.
+- [x] Assignment via `assignedToId` on create/update.
+- [x] EF Core 8 + SQLite persistence.
+- [x] Field-level 400 validation on create/update/comment bodies.
+- [x] `GET /api/health` smoke endpoint.
+- [ ] `GET /api/users` — **not implemented** (documented in api-contract, pending).
+- [ ] API fully matches `api-contract.md` until users endpoint exists.
 
 ## Frontend (React)
 
-- [ ] UI flows match `ui-flow.md`.
-- [ ] Users can create tickets and manage assignment/status through the UI.
-- [ ] Status control only offers **valid next** statuses for the current ticket.
-- [ ] Priority and status are visible on list and detail.
-- [ ] Basic responsive layout works on desktop and mobile.
+- [ ] Not started (`src/frontend/` absent).
 
 ## Testing
 
-- [ ] Integration tests cover ticket APIs and allowed/rejected status transitions per `test-strategy.md`.
-- [ ] Test results are recorded in `test-results.md`.
+- [ ] Integration test project not created.
+- [ ] State machine matrix tests not written.
+- [ ] Results not in `test-results.md`.
 
 ## Delivery
 
-- [ ] Code review notes and fixes documented.
-- [ ] PR description, reflection, and AI usage summary completed.
+- [x] `code-review-notes.md` — self-review of services.
+- [x] `debugging-notes.md` — comment 404 investigation.
+- [ ] `review-fixes.md` — fixes from review not applied.
+- [ ] `pr-description.md`, `reflection.md`, `final-ai-usage-summary.md` — incomplete.

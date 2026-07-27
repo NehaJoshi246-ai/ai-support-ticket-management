@@ -4,14 +4,22 @@
 
 | Date | Suite | Passed | Failed | Skipped | Notes |
 |------|-------|--------|--------|---------|-------|
-| | Integration | | | | Not run yet — pre-code staging |
+| — | Integration | — | — | — | Test project not created yet |
 
 ## Latest run
 
-- **Command:**
-- **Environment:**
-- **Outcome:** Pending application and test project scaffolding.
+- **Command:** _pending_
+- **Environment:** .NET 8, SQLite
+- **Outcome:** No automated tests in repository.
 
-## Details
+## Manual smoke (API)
 
-_Add failing test names, stack traces, and links to fixes as tests are executed._
+| Check | Result | Notes |
+|-------|--------|-------|
+| `dotnet build src/SupportTickets.sln` | ✅ | Builds clean |
+| `GET /api/health` | ✅ | Manual |
+| `GET /api/tickets` | ✅ | Returns seed + created tickets |
+| `PATCH` valid/invalid status | ✅ | 200 / 409 |
+| POST comment missing ticket | ✅ | 404 (not 500) |
+
+Record formal integration test output here when `tests/` project exists.

@@ -2,24 +2,23 @@
 
 ## Purpose
 
-Prompts used when diagnosing failures in API, UI, EF Core, or tests.
+Diagnose runtime issues with AI assistance.
 
-## Prompts
+## Session: Comment POST → 500 vs 404
 
-### Investigate failure
+**Problem:** Expected 404 when posting comment to non-existent ticket.
 
-```
-Given this error/log and the relevant files, identify root cause and suggest a
-minimal fix. Record findings in debugging-notes.md.
-```
+**Investigation:** Traced `TicketCommentsController` → `TicketCommentService.EnsureTicketExistsAsync` → `NotFoundException` catch.
 
-### Flaky / DB test issues
+**Likely causes documented:**
+- Unhandled `DbUpdateException` if existence check skipped (FK failure)
+- Uncaught `NotFoundException` if no controller catch
 
-```
-Integration tests are failing due to database state/isolation. Propose a clean
-fixture approach and update test-strategy.md if needed.
-```
+**Validated:** Current code returns 404 for ticket id 99999.
+
+**Full write-up:** [debugging-notes.md](../debugging-notes.md)
 
 ## Outcomes
 
-_TBD during debugging._
+- Root cause framework for 500 vs 404 on nested resources
+- Confirmed fix path: explicit existence check + controller catch

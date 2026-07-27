@@ -2,20 +2,33 @@
 
 ## Summary
 
-- Stage repository documentation structure for the support ticket management project.
-- Stack target: ASP.NET Core Web API, React, EF Core 8, integration tests.
-- Application code to follow after requirements and design docs are finalized.
+Support Ticket Management assessment — ASP.NET Core 8 Web API with EF Core SQLite backend for tickets, status transitions, and comments.
 
-## Changes
+## What's in this PR
 
-- Added required root documentation files for planning, design, testing, review, and delivery.
+### Backend ✅
+
+- `SupportTickets.Api`, `SupportTickets.Domain`, `SupportTickets.Infrastructure`
+- Ticket CRUD (fields via PUT; status via dedicated PATCH)
+- `TransitionMap` state machine; invalid transitions → 409
+- Nested comment endpoints with ticket existence checks → 404
+- Seed: 10 users, 5 tickets (all statuses), 2 comments
+- SQLite auto-migrate on startup; CORS + Swagger in Development
+
+### Not in this PR yet
+
+- `GET /api/users`
+- React frontend (`src/frontend/`)
+- Integration test project (`tests/`)
+- Review fixes from `code-review-notes.md`
 
 ## Test plan
 
-- [ ] Confirm all required root markdown files are present.
-- [ ] (Later) Run integration tests and update `test-results.md`.
-- [ ] (Later) Manually verify ticket create/list/update UI flows.
+- [x] `dotnet build src/SupportTickets.sln`
+- [x] Manual: GET tickets, POST ticket, PATCH status (valid/invalid), POST comment
+- [ ] Integration test suite
+- [ ] UI smoke tests
 
-## Notes
+## Docs
 
-_Update this file when opening the actual feature PR with implementation details._
+Root markdown and `ai-prompts/` aligned with implemented code.

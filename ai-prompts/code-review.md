@@ -2,23 +2,24 @@
 
 ## Purpose
 
-Prompts used for self-review, peer-review assistance, and tracking fixes.
+Self-review of service layer with accepted and rejected findings.
 
-## Prompts
-
-### Review pass
+## Prompt used
 
 ```
-Review the ticket management implementation against api-contract.md, data-model.md,
-ui-flow.md, and acceptance-criteria.md. Record findings in code-review-notes.md.
-```
-
-### Apply fixes
-
-```
-Address the open items in code-review-notes.md and track resolutions in review-fixes.md.
+Review TicketService and TicketStatusTransitionService for validation gaps,
+null refs, and concurrent update risks. Do not fix — list for human review.
+Include rejected suggestions with rationale.
 ```
 
 ## Outcomes
 
-_TBD during review._
+Full review: [code-review-notes.md](../code-review-notes.md)
+
+**Accepted highlights:** no concurrency token, PUT+PATCH races, duplicated mapper, missing users API.
+
+**Rejected highlights:** mandatory Application layer move, same-status 409, repository pattern without need.
+
+## Follow-up
+
+Track fixes in [review-fixes.md](../review-fixes.md) — none applied yet.
