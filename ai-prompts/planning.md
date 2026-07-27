@@ -161,15 +161,15 @@ Log resolutions in review-fixes.md.
 - `database/setup-notes.md` — connection string, migrations, seed, persistence.
 - `debugging-notes.md` — comment 404 vs 500 investigation.
 - `code-review-notes.md` — TicketService / transition service review with rejected findings.
-- `final-ai-usage-summary.md` — **prompt iteration log with failures and course corrections**.
+- `final-ai-usage-summary.md` — prompt iteration log with failures and course corrections.
+- `ai-prompts/transcripts/` — raw JSONL session exports, readable markdown, `SESSION-INDEX.md`.
 
 ### Remaining
 
 - `GET /api/users`
 - React frontend (`ui-flow.md`)
-- Integration tests (`test-strategy.md` + transition matrix)
 - Review fixes from `code-review-notes.md`
-- Delivery docs: `pr-description.md`, `reflection.md`, `final-ai-usage-summary.md`
+- Delivery docs: `pr-description.md` (partial)
 
 ---
 
@@ -182,5 +182,6 @@ Log resolutions in review-fixes.md.
 | [acceptance-criteria.md](../acceptance-criteria.md) | Definition of done |
 | [api-contract.md](../api-contract.md) | Endpoint shapes |
 | [ui-flow.md](../ui-flow.md) | Frontend screens |
+| [ai-prompts/transcripts/README.md](transcripts/README.md) | Raw chat transcripts |
 | [test-strategy.md](../test-strategy.md) | Test coverage |
 | [database/setup-notes.md](../database/setup-notes.md) | Local DB setup |

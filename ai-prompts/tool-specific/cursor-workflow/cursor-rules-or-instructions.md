@@ -23,3 +23,5 @@
 ## Doc sync
 
 After substantive changes, update: `api-contract.md`, `acceptance-criteria.md`, `implementation-plan.md`, `ai-prompts/planning.md`.
+
+After new Cursor sessions, copy JSONL into `ai-prompts/transcripts/raw/` and run `python ai-prompts/transcripts/scripts/export-transcripts.py`.

@@ -26,4 +26,4 @@
 
 - Docs updated to match code (not aspirational Application layer paths).
 - Status changes only via `PATCH /api/tickets/{id}/status`.
-- Log AI usage in `final-ai-usage-summary.md` (includes failures and course corrections) and prompts under `ai-prompts/`.
+- Log AI usage in `final-ai-usage-summary.md` (includes failures and course corrections), phase prompts under `ai-prompts/`, and **raw chat transcripts** in `ai-prompts/transcripts/raw/` (see `ai-prompts/transcripts/README.md`).

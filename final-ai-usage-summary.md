@@ -42,10 +42,13 @@ Each row: what was asked → what happened → correction if any.
 | 17 | Review services — **don't fix**, list only | `code-review-notes.md` with accepted + **rejected** items | ✅ Human ownership signal |
 | 18 | README setup outline for clean machine | Section stubs in `readme.md` | ⬜ Commands still placeholders for human |
 | 19 | `database/setup-notes.md` fill-in | Connection string, migrate, seed, persistence | ✅ |
-| 20 | Integration tests — list 25 transition pairs first | Full matrix table for human marking | ⬜ Tests not written yet — deliberate pause |
+| 20 | Integration tests — list 25 transition pairs first | Full matrix table for human marking | ✅ Paused until human review — then implemented (#24) |
 | 21 | **"Update all file according to code"** | Mass doc sync: removed ghost Users API, Application layer, frontend-as-done | 🔧 **Major correction** — docs had described aspirational architecture |
 | 22 | Update `planning.md` | Phase checklist synced to repo | ✅ |
-| 23 | Capture prompt iteration including failures | This document | ✅ |
+| 23 | Capture prompt iteration including failures | `final-ai-usage-summary.md` (this file) | ✅ |
+| 24 | Implement 25-pair matrix as `WebApplicationFactory` tests | `TicketStatusTransitionMatrixTests` — 25/25 pass | 🔧 Fixed DbContext swap + JSON camelCase in tests |
+| 25 | Deepen reflection with trade-offs + demo evidence | Expanded `reflection.md` | ✅ |
+| 26 | Preserve raw prompt/response transcripts | `ai-prompts/transcripts/raw/*.jsonl`, index, readable exports | ✅ |
 
 ---
 
@@ -134,12 +137,33 @@ From `code-review-notes.md` — intentionally **not** turned into tasks:
 
 - React UI (`src/frontend/ticket-ui/`)
 - `GET /api/users`
-- Integration test project + 25-pair matrix automation
 - Review fixes: concurrency token, shared `TicketResponse` mapper
 - Filled README command blocks (outline only)
 - `allowedNextStatuses` on live API response
 
 ---
+
+## Raw transcripts (full traceability)
+
+Immutable Cursor session exports live in the repo:
+
+| Path | Contents |
+|------|----------|
+| [ai-prompts/transcripts/README.md](ai-prompts/transcripts/README.md) | Format, policy, how to regenerate |
+| [ai-prompts/transcripts/raw/](ai-prompts/transcripts/raw/) | **Canonical JSONL** — every user prompt and assistant response (+ tool calls) |
+| [ai-prompts/transcripts/readable/](ai-prompts/transcripts/readable/) | Human-readable export (tool calls summarized) |
+| [ai-prompts/transcripts/SESSION-INDEX.md](ai-prompts/transcripts/SESSION-INDEX.md) | Turn index with JSONL line numbers |
+
+**Primary session:** `session-84f66eb1-primary.jsonl` (26 user turns, Jul 24–27).  
+**Fork session:** `session-e7026414-fork.jsonl` (parallel thread; overlaps early prompts).
+
+This document’s prompt # column is a **curated summary**; cross-check any claim against the raw JSONL at the line cited in `SESSION-INDEX.md`.
+
+Regenerate index/readable after copying new JSONL:
+
+```bash
+python ai-prompts/transcripts/scripts/export-transcripts.py
+```
 
 ## Assessment (meta)
 
@@ -158,3 +182,4 @@ AI was strongest at **scaffolding and API implementation** — hours of boilerpl
 | [code-review-notes.md](code-review-notes.md) | Accepted/rejected findings |
 | [ai-prompts/code-review.md](ai-prompts/code-review.md) | Review prompt + outcomes |
 | [reflection.md](reflection.md) | Personal takeaways |
+| [ai-prompts/transcripts/README.md](ai-prompts/transcripts/README.md) | Raw JSONL transcripts + index |

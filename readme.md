@@ -63,7 +63,11 @@ Not in repo yet — planned at `src/frontend/ticket-ui/`.
 
 ### Tests
 
-Not in repo yet — planned under `tests/`.
+```bash
+dotnet test tests/SupportTickets.IntegrationTests/SupportTickets.IntegrationTests.csproj
+```
+
+25-pair status transition matrix — see `test-results.md`.
 
 ## Project layout
 
@@ -73,9 +77,9 @@ src/
   SupportTickets.Api/           # Controllers, Services, DTOs
   SupportTickets.Domain/        # Entities, TransitionMap, exceptions
   SupportTickets.Infrastructure/ # EF Core, migrations, seed
-tests/                          # (empty — integration tests planned)
+tests/                          # SupportTickets.IntegrationTests (25-pair matrix)
 database/                       # setup-notes, schema placeholder
-ai-prompts/                     # Prompt log by phase
+ai-prompts/                     # Phase prompts + raw transcripts (see transcripts/)
 ```
 
 ## API quick reference

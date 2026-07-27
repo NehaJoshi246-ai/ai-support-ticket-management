@@ -46,4 +46,5 @@
 - [x] `code-review-notes.md` — self-review of services.
 - [x] `debugging-notes.md` — comment 404 investigation.
 - [ ] `review-fixes.md` — fixes from review not applied.
-- [ ] `pr-description.md`, `reflection.md`, `final-ai-usage-summary.md` — incomplete.
+- [x] `reflection.md` — trade-offs and demo evidence.
+- [x] `final-ai-usage-summary.md` — iteration log + link to raw transcripts.
