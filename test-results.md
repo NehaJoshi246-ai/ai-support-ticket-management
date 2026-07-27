@@ -4,13 +4,21 @@
 
 | Date | Suite | Passed | Failed | Skipped | Notes |
 |------|-------|--------|--------|---------|-------|
-| — | Integration | — | — | — | Test project not created yet |
+| 2026-07-27 | Integration (status matrix) | 25 | 0 | 0 | `TicketStatusTransitionMatrixTests` |
 
 ## Latest run
 
-- **Command:** _pending_
-- **Environment:** .NET 8, SQLite
-- **Outcome:** No automated tests in repository.
+- **Command:** `dotnet test tests/SupportTickets.IntegrationTests/SupportTickets.IntegrationTests.csproj`
+- **Environment:** .NET 8, SQLite `:memory:` via `WebApplicationFactory`
+- **Outcome:** 25/25 passed — full `(fromStatus, toStatus)` matrix
+
+### Matrix breakdown
+
+| Category | Count | HTTP |
+|----------|-------|------|
+| Valid forward transitions | 5 | 200 |
+| Same-status no-op | 5 | 200 |
+| Invalid transitions | 15 | 409 with `fromStatus`, `toStatus`, `allowedNextStatuses` |
 
 ## Manual smoke (API)
 
@@ -21,5 +29,3 @@
 | `GET /api/tickets` | ✅ | Returns seed + created tickets |
 | `PATCH` valid/invalid status | ✅ | 200 / 409 |
 | POST comment missing ticket | ✅ | 404 (not 500) |
-
-Record formal integration test output here when `tests/` project exists.

@@ -3,7 +3,7 @@
 ## Scope
 
 Integration tests for `SupportTickets.Api` + EF Core SQLite.  
-**Status:** No test project in `tests/` yet — strategy only.
+**Status:** `tests/SupportTickets.IntegrationTests/` — status transition matrix implemented.
 
 ## Test host
 

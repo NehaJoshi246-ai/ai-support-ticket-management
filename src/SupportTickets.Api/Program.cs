@@ -59,8 +59,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHttpsRedirection();
+}
 app.UseCors();
 app.MapControllers();
 
 app.Run();
+
+// Expose entry point for WebApplicationFactory integration tests.
+public partial class Program { }

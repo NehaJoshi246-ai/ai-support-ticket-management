@@ -161,6 +161,7 @@ Log resolutions in review-fixes.md.
 - `database/setup-notes.md` — connection string, migrations, seed, persistence.
 - `debugging-notes.md` — comment 404 vs 500 investigation.
 - `code-review-notes.md` — TicketService / transition service review with rejected findings.
+- `final-ai-usage-summary.md` — **prompt iteration log with failures and course corrections**.
 
 ### Remaining
 

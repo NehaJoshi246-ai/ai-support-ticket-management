@@ -37,9 +37,9 @@
 
 ## Testing
 
-- [ ] Integration test project not created.
-- [ ] State machine matrix tests not written.
-- [ ] Results not in `test-results.md`.
+- [x] Integration test project: `tests/SupportTickets.IntegrationTests/`
+- [x] State machine matrix tests — 25 pairs via `TicketStatusTransitionMatrixTests`
+- [x] Results recorded in `test-results.md`
 
 ## Delivery
 

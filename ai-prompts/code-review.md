@@ -23,3 +23,7 @@ Full review: [code-review-notes.md](../code-review-notes.md)
 ## Follow-up
 
 Track fixes in [review-fixes.md](../review-fixes.md) — none applied yet.
+
+## Iteration note
+
+Human explicitly blocked auto-fix — part of ownership story in [final-ai-usage-summary.md](../final-ai-usage-summary.md).
