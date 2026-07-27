@@ -36,11 +36,11 @@
 Allowed transitions only:
 
 ```
-Open        → InProgress, Cancelled
-InProgress  → Resolved, Cancelled
-Resolved    → Closed
-Closed      → (terminal)
-Cancelled   → (terminal)
+Open ──────────────► In Progress
+Open ──────────────► Cancelled
+In Progress ───────► Resolved
+In Progress ───────► Cancelled
+Resolved ──────────► Closed
 ```
 
 | From | Allowed next statuses |
